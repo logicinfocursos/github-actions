@@ -1,4 +1,5 @@
 name: Deploy Homolog
+
 # O gatilho (evento) será a atualização (push) direta na branch homolog
 on:
   push:
@@ -13,10 +14,5 @@ jobs:
         uses: actions/checkout@v4 # Baixa o código do repositório
       
       - name: Atualizar Container Docker Local
-        # Aqui você insere os comandos que rodam no seu Windows
-        run: |
-          docker build -t maestro-homolog .
-          docker stop maestro-homolog-container || true
-          docker rm maestro-homolog-container || true
-          docker run -d -p 3000:3000 --name maestro-homolog-container maestro-homolog
-          
+        # Usando o Docker Compose, um único comando faz todo o ciclo de build e restart
+        run: docker compose up -d --build
