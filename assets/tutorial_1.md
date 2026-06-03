@@ -15,7 +15,8 @@ Como você deseja atualizar contêineres Docker localmente no seu computador (Wi
 Para garantir que a branch `production` só seja atualizada após uma autorização formal, usaremos os **Environments (Ambientes)**.
 1. Vá na aba **Settings** do seu repositório no GitHub.
 2. Acesse **Environments** e crie um novo ambiente chamado `production`.
-3. Marque a opção de **Required reviewers** (Revisores obrigatórios) nas Regras de Proteção de Ambiente e adicione o seu próprio usuário como aprovador.
+3. Marque a opção de **Required reviewers** (Revisores obrigatórios) nas Regras de Proteção de Ambiente e adicione o seu próprio usuário como aprovador. 
+***Obs:*** essa opção não irá aparece se o repositório for "private" e o plano for "free". Creio que para planos pagos deva aparecer.
 
 **Passo 4: Criar o Workflow de Homologação**
 Os fluxos de trabalho são arquivos YAML que devem ficar obrigatoriamente na pasta `.github/workflows/` do seu projeto. 
@@ -76,7 +77,7 @@ jobs:
 **O Fluxo na Prática (Simulando o cenário da Always On):**
 1. Você desenvolve o formulário Next.js na branch `MAEST-365`.
 2. Quando a tarefa estiver pronta, você faz o merge de `MAEST-365` para `homolog` (seja via pull request ou push direto).
-3. O GitHub Actions detecta a mudança em `homolog` e aciona o **Workflow de Homologação**, atualizando seu Docker local automaticamente na porta 3000.
+3. O GitHub Actions detecta a mudança em `homolog` e aciona o **Workflow de Homologação**, atualizando seu Docker local automaticamente na porta 3333.
 4. Estando tudo certo em homologação, você abre um **Pull Request** de `MAEST-365` (ou de `homolog`) para a branch `production`. O Pull Request funciona como a revisão do código pela equipe.
 5. Você (como Tech Lead) aprova o Pull Request e faz o merge do código.
 6. O **Workflow de Produção** é disparado. No entanto, o pipeline será **pausado automaticamente** ao chegar no *job* de deploy.
