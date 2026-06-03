@@ -18,6 +18,12 @@ Para garantir que a branch `production` só seja atualizada após uma autorizaç
 3. Marque a opção de **Required reviewers** (Revisores obrigatórios) nas Regras de Proteção de Ambiente e adicione o seu próprio usuário como aprovador. 
 ***Obs:*** essa opção não irá aparece se o repositório for "private" e o plano for "free". Creio que para planos pagos deva aparecer.
 
+***Depois que o agente já estiver instalado, para executá-lo novamente:***
+Na pasta raiz actions-runner, rodar .\run.cmd (modo terminal, fica “escutando” jobs).
+Se você quer em segundo plano e resiliente a reboot, instalar como serviço:
+.\svc install
+.\svc start
+
 **Passo 4: Criar o Workflow de Homologação**
 Os fluxos de trabalho são arquivos YAML que devem ficar obrigatoriamente na pasta `.github/workflows/` do seu projeto. 
 Crie o arquivo `.github/workflows/deploy-homolog.yml`:
