@@ -1,6 +1,5 @@
 name: Deploy Homolog
 
-# O gatilho (evento) será a atualização (push) direta na branch homolog
 on:
   push:
     branches:
@@ -8,11 +7,11 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted # Informa ao GitHub para rodar no seu Windows 11
+    runs-on: self-hosted
     steps:
       - name: Checkout do código
-        uses: actions/checkout@v4 # Baixa o código do repositório
+        uses: actions/checkout@v4
       
       - name: Atualizar Container Docker Local
-        # Usando o Docker Compose, um único comando faz todo o ciclo de build e restart
+        shell: cmd # <--- Isso força o uso do CMD do Windows
         run: docker compose up -d --build
