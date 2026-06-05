@@ -23,7 +23,9 @@ jobs:
       # 3. Dá uma pausa para o Next.js carregar dentro do container antes de testar
       - name: Aguardar inicialização do sistema na porta 3333
         shell: cmd
-        run: timeout /t 10 /nobreak > nul
+        #run: timeout /t 10 /nobreak > nul
+        # O ping faz 11 disparos para o seu próprio PC, aguardando 1 segundo entre eles (totalizando 10 segundos)
+        run: ping 127.0.0.1 -n 11 > nul
 
       # 4. Instala as dependências do projeto (onde deve estar o Playwright)
       - name: Instalar dependências de teste
