@@ -1,0 +1,26 @@
+name: Rollback Homolog
+
+on:
+  # Permite disparar o rollback manualmente pela aba Actions do GitHub
+  workflow_dispatch:
+    inputs:
+      target_commit:
+        description: 'SHA do Commit ou Tag (Deixe em branco para voltar para a versão imediatamente anterior)'
+        required: false
+        default: 'homolog~1' # 'homolog~1' significa: o commit logo antes do atual na branch homolog
+
+jobs:
+  rollback:
+    runs-on: self-hosted
+    steps:
+      # Passo 1: Baixa o código apontando para o commit de rollback escolhido
+      - name: Checkout do código no commit selecionado
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_commit }}
+          fetch-depth: 0 # Baixa o histórico para conseguir encontrar commits anteriores
+
+      # Passo 2: Reconstrói o container com o código antigo baixado
+      - name: Reverter Container Docker Local
+        shell: cmd
+        run: docker compose up -d --build
