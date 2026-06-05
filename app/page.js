@@ -85,7 +85,7 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 text-gray-800">
       <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center text-indigo-600">
-          Cadastro de Dev v10
+          Cadastro de Dev v11*
         </h1>
 
         {enviado ? (

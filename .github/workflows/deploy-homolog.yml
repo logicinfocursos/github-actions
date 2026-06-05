@@ -9,41 +9,56 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      # 1. Baixa o código (com fetch-depth: 0 para permitir que o Git volte atrás se falhar)
+      # 1. Baixa o código com o histórico completo para o caso de precisar de rollback
       - name: Checkout do código
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2. Atualiza o container com o código novo que você acabou de enviar
+      # 2. CRIAÇÃO DO .ENV: Injeta chaves secretas em um arquivo real no seu PC
+      # Nota: Sem espaços entre o segredo e o caractere '>' para o Windows não criar espaços falsos.
+      - name: Criar arquivo .env dinamicamente
+        shell: cmd
+        run: |
+          echo NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}>.env
+          echo DATABASE_URL=${{ secrets.DATABASE_URL }}>>.env
+          echo NODE_ENV=production>>.env
+
+      # 3. Atualiza o container (o Docker Compose lê o arquivo .env automaticamente)
       - name: Atualizar Container Docker Local
         shell: cmd
         run: docker compose up -d --build
       
-      # 3. Dá uma pausa para o Next.js carregar dentro do container antes de testar
+      # 4. Pausa de 10 segundos para o Next.js inicializar na porta 3333
       - name: Aguardar inicialização do sistema na porta 3333
         shell: cmd
-        #run: timeout /t 10 /nobreak > nul
-        # O ping faz 11 disparos para o seu próprio PC, aguardando 1 segundo entre eles (totalizando 10 segundos)
         run: ping 127.0.0.1 -n 11 > nul
 
-      # 4. Instala as dependências do projeto (onde deve estar o Playwright)
+      # 5. Instala as dependências do projeto na máquina do Runner
       - name: Instalar dependências de teste
         shell: cmd
         run: npm ci
 
-      # 5. Garante que os navegadores do Playwright estão instalados no seu Windows
-      # Nota: Isso só vai demorar na primeira vez. Depois ele usará o cache local do seu PC.
+      # 6. Garante os navegadores do Playwright instalados no Windows
       - name: Instalar Navegadores do Playwright
         shell: cmd
         run: npx playwright install --with-deps
 
-      # 6. Executa os testes automatizados
+      # 7. Executa a bateria de testes automatizados
       - name: Executar Testes do Playwright
         shell: cmd
         run: npx playwright test
 
-      # 7. SE OS TESTES FALHAREM: O GitHub Actions ativa este passo automaticamente
+      # 8. ARTEFATOS: Salva o relatório e as screenshots (Roda independente de passar ou falhar)
+      - name: Upload do Relatório e Evidências do Playwright
+        uses: actions/upload-artifact@v4
+        if: always() # <--- ISSO GARANTE QUE O PRINT VAI SUBIR MESMO SE O TESTE QUEBRAR!
+        with:
+          name: evidencias-playwright-homolog
+          path: playwright-report/
+          retention-days: 7
+
+      # 9. AUTO-ROLLBACK: Só é ativado se o passo 7 (testes) falhar
       - name: Erro detectado! Executando Rollback Automático
         if: failure()
         shell: cmd
@@ -51,9 +66,6 @@ jobs:
           echo "========================================================="
           echo " ALERTA: Testes falharam! Desfazendo alteracoes na homolog"
           echo "========================================================="
-          rem Volta o código para o commit imediatamente anterior
           git checkout HEAD~1
-          rem Reconstrói o Docker com a versão estável antiga
           docker compose up -d --build
-          rem Força o workflow a terminar com status de erro para você ver o sinal vermelho no GitHub
           exit 1
