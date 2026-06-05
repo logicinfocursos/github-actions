@@ -1,0 +1,19 @@
+name: Rollback Homolog
+
+on:
+  workflow_dispatch:
+    inputs:
+      rollback_to:
+        description: 'Tag da imagem para rollback (ex: v1.2.3, sha-abc1234)'
+        required: true
+        default: 'latest'
+
+jobs:
+  rollback:
+    runs-on: self-hosted
+    steps:
+      - name: Rollback do Container Docker Local
+        shell: cmd
+        run: |
+          docker compose pull || echo "Pull ignorado quando a tag nao existir no registry"
+          docker compose up -d --force-recreate --remove-orphans next-app
