@@ -6,21 +6,21 @@ const massaDeTestes = [
     caso: 'Usuário padrão',
     nome: 'João da Silva',
     email: 'joao@exemplo.com',
-    opcaoSelect: 'valor-1',
+    opcaoSelect: 'junior',
     marcarCheckbox: true
   },
   {
     caso: 'Usuário sem checkbox',
     nome: 'Maria Souza',
     email: 'maria@exemplo.com',
-    opcaoSelect: 'valor-2',
+    opcaoSelect: 'pleno',
     marcarCheckbox: false
   },
   {
     caso: 'Nome abreviado',
-    nome: 'Rui',
+    nome: 'Rui Barbosa',
     email: 'rui@exemplo.com',
-    opcaoSelect: 'valor-1',
+    opcaoSelect: 'senior',
     marcarCheckbox: true
   }
 ];
