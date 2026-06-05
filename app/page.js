@@ -44,7 +44,7 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 text-gray-800">
       <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center text-indigo-600">
-          Cadastro de Dev - versão alterada para testes de rollback - try 8*
+          Cadastro de Dev - versão alterada para testes de rollback - try 9*
         </h1>
 
         {/* Mensagem de Erro */}

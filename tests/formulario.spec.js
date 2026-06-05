@@ -40,9 +40,14 @@ for (const dados of massaDeTestes) {
     // 2. Troque getByLabel('Email') pelo ID correto do HTML (Resolve o seu erro atual)
     await page.locator('#email').fill(dados.email);
 
-    // 3. Troque getByLabel('Seu Select') pelo ID correto do HTML
-    // (Verifique se no seu objeto 'dados' a propriedade se chama 'opcaoSelect' ou 'nivel')
-    await page.locator('#nivel').selectOption(dados.opcaoSelect || dados.nivel);
+    // 1. (Opcional) Adicione um console.log temporário para ver o que está vindo nos logs do GitHub Actions:
+    console.log(`Tentando selecionar o nível com o dado:`, dados.opcaoSelect || dados.nivel);
+
+    // 2. Converta o valor para letras minúsculas usando .toLowerCase() para bater com o 'value' do seu HTML
+    const valorNivel = String(dados.opcaoSelect || dados.nivel || 'pleno').toLowerCase().trim();
+
+    // 3. Execute a seleção usando o valor tratado
+    await page.locator('#nivel').selectOption(valorNivel);
 
     // 4. Se houver o passo do checkbox dos termos, use o ID também:
     await page.locator('#termos').check();
