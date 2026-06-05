@@ -31,7 +31,8 @@ for (const dados of massaDeTestes) {
   // O título do teste recebe o nome de cada caso para facilitar a identificação no relatório
   test(`preencher e enviar o formulário - Cenário: ${dados.caso}`, async ({ page }) => {
     
-    await page.goto('http://localhost:3000');
+    await page.goto('http://localhost:3333');
+    //await page.goto('/');
 
     // Preenche os campos usando os dados dinâmicos da iteração atual
     await page.getByLabel('Nome').fill(dados.nome);
