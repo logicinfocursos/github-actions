@@ -47,6 +47,6 @@ for (const dados of massaDeTestes) {
 
     await page.getByRole('button', { name: 'Enviar' }).click();
 
-    await page.waitForTimeout(5000)
+    //await page.waitForTimeout(5000)
   });
 }
