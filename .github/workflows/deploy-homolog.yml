@@ -21,7 +21,7 @@ jobs:
         run: docker compose up -d --build
       
       # 3. Dá uma pausa para o Next.js carregar dentro do container antes de testar
-      - name: Aguardar inicialização do sistema
+      - name: Aguardar inicialização do sistema na porta 3333
         shell: cmd
         run: timeout /t 10 /nobreak > nul
 
