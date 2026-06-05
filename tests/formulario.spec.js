@@ -1,60 +1,74 @@
-import { test, expect } from '@playwright/test';
+const { test, expect } = require("@playwright/test");
 
-// 1. Defina sua massa de testes em um array de objetos
-const massaDeTestes = [
-  {
-    caso: 'Usuário padrão',
-    nome: 'João da Silva',
-    email: 'joao@exemplo.com',
-    opcaoSelect: 'junior',
-    marcarCheckbox: true
-  },
-  {
-    caso: 'Usuário sem checkbox',
-    nome: 'Maria Souza',
-    email: 'maria@exemplo.com',
-    opcaoSelect: 'pleno',
-    marcarCheckbox: false
-  },
-  {
-    caso: 'Nome abreviado',
-    nome: 'Rui Barbosa',
-    email: 'rui@exemplo.com',
-    opcaoSelect: 'senior',
-    marcarCheckbox: true
-  }
-];
-
-// 2. Itere sobre a massa de testes para criar testes dinâmicos
-for (const dados of massaDeTestes) {
-
-  // O título do teste recebe o nome de cada caso para facilitar a identificação no relatório
-  test(`preencher e enviar o formulário - Cenário: ${dados.caso}`, async ({ page }) => {
-
-    await page.goto('http://localhost:3333');
-    //await page.goto('/');
-
-    // 1. Troque getByLabel('Nome') pelo ID correto do HTML
-    await page.locator('#nome').fill(dados.nome);
-
-    // 2. Troque getByLabel('Email') pelo ID correto do HTML (Resolve o seu erro atual)
-    await page.locator('#email').fill(dados.email);
-
-    // 1. (Opcional) Adicione um console.log temporário para ver o que está vindo nos logs do GitHub Actions:
-    console.log(`Tentando selecionar o nível com o dado:`, dados.opcaoSelect || dados.nivel);
-
-    // 2. Converta o valor para letras minúsculas usando .toLowerCase() para bater com o 'value' do seu HTML
-    const valorNivel = String(dados.opcaoSelect || dados.nivel || 'pleno').toLowerCase().trim();
-
-    // 3. Execute a seleção usando o valor tratado
-    await page.locator('#nivel').selectOption(valorNivel);
-
-    // 4. Se houver o passo do checkbox dos termos, use o ID também:
-    await page.locator('#termos').check();
-
-    // 5. Clique no botão de enviar pelo ID
-    await page.locator('#btn-enviar').click();
-
-    //await page.waitForTimeout(5000)
+test.describe("Testes de Validação do Formulário de Cadastro", () => {
+  
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
   });
-}
+
+  test("Cenário Sucesso: Deve permitir envio e tirar screenshot quando dados forem válidos", async ({ page }) => {
+    // Preenche dados válidos (CPF válido real gerado para testes)
+    await page.locator("#nome").fill("Anselmo Silva");
+    await page.locator("#email").fill("anselmo@provedor.com");
+    await page.locator("#cpf").fill("11144477735"); 
+    await page.locator("#nivel").selectOption("pleno");
+    await page.locator("#termos").check();
+
+    // Valida que o botão foi desbloqueado
+    const botao = page.locator("#btn-enviar");
+    await expect(botao).toBeEnabled();
+    await botao.click();
+
+    // Valida tela de sucesso
+    await expect(page.locator("#success-section")).toBeVisible();
+
+    // TIRA A SCREENSHOT DE PROVA DE SUCESSO
+    await page.screenshot({ path: "playwright-report/evidencia-sucesso.png", fullPage: true });
+  });
+
+  test("Cenário Erro: Deve exibir alerta de Nome Inválido e bloquear botão", async ({ page }) => {
+    // Nome apenas com 2 letras no sobrenome ou sem sobrenome
+    await page.locator("#nome").fill("Joe Ma");
+    await page.locator("#email").fill("valido@email.com");
+    await page.locator("#cpf").fill("11144477735");
+    await page.locator("#nivel").selectOption("junior");
+    await page.locator("#termos").check();
+
+    // Verifica se a mensagem de alerta do nome apareceu
+    const alertaNome = page.locator("#error-nome");
+    await expect(alertaNome).toBeVisible();
+    await expect(alertaNome).toContainText("Informe nome e sobrenome");
+
+    // Verifica que o botão ENVIAR continua desativado
+    await expect(page.locator("#btn-enviar")).toBeDisabled();
+  });
+
+  test("Cenário Erro: Deve exibir alerta de E-mail Inválido e bloquear botão", async ({ page }) => {
+    await page.locator("#nome").fill("Rodrigo Silva");
+    await page.locator("#email").fill("email_invalido_sem_arroba.com");
+    await page.locator("#cpf").fill("11144477735");
+    await page.locator("#nivel").selectOption("senior");
+    await page.locator("#termos").check();
+
+    const alertaEmail = page.locator("#error-email");
+    await expect(alertaEmail).toBeVisible();
+    await expect(alertaEmail).toContainText("Informe um e-mail válido");
+
+    await expect(page.locator("#btn-enviar")).toBeDisabled();
+  });
+
+  test("Cenário Erro: Deve exibir alerta de CPF Inválido e bloquear botão", async ({ page }) => {
+    await page.locator("#nome").fill("Marcos Oliveira");
+    await page.locator("#email").fill("marcos@email.com");
+    // CPF com os dígitos verificadores falsos (sequência inválida matemática)
+    await page.locator("#cpf").fill("11111111111");
+    await page.locator("#nivel").selectOption("senior");
+    await page.locator("#termos").check();
+
+    const alertaCPF = page.locator("#error-cpf");
+    await expect(alertaCPF).toBeVisible();
+    await expect(alertaCPF).toContainText("Informe um CPF válido");
+
+    await expect(page.locator("#btn-enviar")).toBeDisabled();
+  });
+});
