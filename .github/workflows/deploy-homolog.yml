@@ -25,6 +25,7 @@ jobs:
           echo NODE_ENV=production>>.env
 
       # 3. Atualiza o container (o Docker Compose lê o arquivo .env automaticamente)
+      # Ao usar variáveis em produção, utilize chaves fortes e siga as boas práticas de segurança.
       - name: Atualizar Container Docker Local
         shell: cmd
         run: docker compose up -d --build
@@ -68,4 +69,21 @@ jobs:
           echo "========================================================="
           git checkout HEAD~1
           docker compose up -d --build
-          exit 1
+
+      # 10. NOTIFICAÇÃO TELEGRAM: Avisa no celular se o deploy deu certo ou se precisou de Rollback
+      - name: Enviar notificação para o Telegram
+        uses: appleboy/telegram-action@master
+        if: always() # <--- Executa SEMPRE (tanto no sucesso quanto na falha do pipeline)
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            🚀 *Status do Pipeline de Homologação*
+            
+            • *Repositório:* ${{ github.repository }}
+            • *Commit:* `${{ github.event.head_commit.message }}`
+            • *Autor:* ${{ github.actor }}
+            • *Resultado Final:* ${{ job.status == 'success' && '✅ SUCESSO (Online)' || '❌ FALHOU (Rollback Executado)' }}
+            
+            📢 Baixe as evidências e veja o relatório na aba Actions do GitHub!
