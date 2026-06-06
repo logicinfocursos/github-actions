@@ -69,8 +69,8 @@ jobs:
           echo "========================================================="
           git checkout HEAD~1
           docker compose up -d --build
-          
-      # 10. NOTIFICAÇÃO TELEGRAM: Versão nativa para Windows (Sem dependência de Docker/Linux)
+
+      # 10. NOTIFICAÇÃO TELEGRAM: Versão nativa para Windows (Modo HTML estável)
       - name: Enviar notificação para o Telegram
         if: always() 
         shell: powershell
@@ -82,30 +82,30 @@ jobs:
           REPO: ${{ github.repository }}
           AUTHOR: ${{ github.actor }}
         run: |
-          # Define o emoji com base no sucesso ou falha
+          # Define o texto com base no sucesso ou falha
           $statusStr = if ($env:JOB_STATUS -eq "success") { "✅ SUCESSO (Online)" } else { "❌ FALHOU (Rollback Executado)" }
           
-          # Monta o texto da mensagem (Mantendo o Markdown)
+          # Monta o texto usando tags HTML normais (Evita o conflito de crases do PowerShell)
           $msg = @"
-          🚀 *Status do Pipeline de Homologação*
+          🚀 <b>Status do Pipeline de Homologação</b>
           
-          • *Repositório:* $env:REPO
-          • *Commit:* `$env:COMMIT_MSG`
-          • *Autor:* $env:AUTHOR
-          • *Resultado Final:* $statusStr
+          • <b>Repositório:</b> $env:REPO
+          • <b>Commit:</b> <code>$env:COMMIT_MSG</code>
+          • <b>Autor:</b> $env:AUTHOR
+          • <b>Resultado Final:</b> $statusStr
           
           📢 Baixe as evidências e veja o relatório na aba Actions do GitHub!
           "@
 
-          # Cria o corpo da requisição em formato JSON
+          # Monta o payload configurando o parse_mode para HTML
           $payload = @{
               chat_id = $env:TELEGRAM_CHAT_ID
               text = $msg
-              parse_mode = "Markdown"
+              parse_mode = "HTML"
           } | ConvertTo-Json -Compress
 
-          # Força o envio em UTF-8 para não quebrar os acentos e emojis no Windows
+          # Transforma em Bytes UTF-8 para preservar acentos e emojis
           $bytes = [System.Text.Encoding]::UTF8.GetBytes($payload)
           
-          # Dispara o envio direto para os servidores do Telegram
+          # Envia para a API do Telegram
           Invoke-RestMethod -Uri "https://api.telegram.org/bot$env:TELEGRAM_TOKEN/sendMessage" -Method Post -Body $bytes -ContentType "application/json; charset=utf-8"
