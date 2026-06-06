@@ -70,42 +70,42 @@ jobs:
           git checkout HEAD~1
           docker compose up -d --build
 
-      # 10. NOTIFICAÇÃO TELEGRAM: Versão nativa para Windows (Modo HTML estável)
+      # 10. NOTIFICAÇÃO TELEGRAM: Versão Aprimorada com Proteção de Codificação (UTF-8) e Hiperlink
       - name: Enviar notificação para o Telegram
         if: always() 
         shell: powershell
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          COMMIT_MSG: ${{ github.event.head_commit.message }}
-          JOB_STATUS: ${{ job.status }}
-          REPO: ${{ github.repository }}
-          AUTHOR: ${{ github.actor }}
+          # Passar os textos pelo 'env' do GitHub blinda os emojis e acentos contra o erro de conversão do Windows
+          TXT_HEADER: "🚀 <b>Status do Pipeline de Homologação</b>"
+          TXT_REPO: "• <b>Repositório:</b> ${{ github.repository }}"
+          TXT_COMMIT: "• <b>Commit:</b> <code>${{ github.event.head_commit.message }}</code>"
+          TXT_AUTHOR: "• <b>Autor:</b> ${{ github.actor }}"
+          TXT_STATUS: "• <b>Resultado Final:</b> ${{ job.status == 'success' && '✅ SUCESSO (O sistema está online!)' || '❌ FALHOU (Rollback executado)' }}"
+          TXT_LINK: "📢 <a href='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'>Clique aqui para ver o relatório e evidências</a>"
         run: |
-          # Define o texto com base no sucesso ou falha
-          $statusStr = if ($env:JOB_STATUS -eq "success") { "✅ SUCESSO (Online)" } else { "❌ FALHOU (Rollback Executado)" }
-          
-          # Monta o texto usando tags HTML normais (Evita o conflito de crases do PowerShell)
+          # Une as variáveis de ambiente que o GitHub injetou de forma limpa
           $msg = @"
-          🚀 <b>Status do Pipeline de Homologação</b>
+          $env:TXT_HEADER
           
-          • <b>Repositório:</b> $env:REPO
-          • <b>Commit:</b> <code>$env:COMMIT_MSG</code>
-          • <b>Autor:</b> $env:AUTHOR
-          • <b>Resultado Final:</b> $statusStr
+          $env:TXT_REPO
+          $env:TXT_COMMIT
+          $env:TXT_AUTHOR
+          $env:TXT_STATUS
           
-          📢 Baixe as evidências e veja o relatório na aba Actions do GitHub!
+          $env:TXT_LINK
           "@
 
-          # Monta o payload configurando o parse_mode para HTML
+          # Monta o objeto JSON de envio
           $payload = @{
               chat_id = $env:TELEGRAM_CHAT_ID
               text = $msg
               parse_mode = "HTML"
           } | ConvertTo-Json -Compress
 
-          # Transforma em Bytes UTF-8 para preservar acentos e emojis
+          # Transforma em bytes usando UTF-8 estrito
           $bytes = [System.Text.Encoding]::UTF8.GetBytes($payload)
           
-          # Envia para a API do Telegram
+          # Dispara para os servidores do Telegram
           Invoke-RestMethod -Uri "https://api.telegram.org/bot$env:TELEGRAM_TOKEN/sendMessage" -Method Post -Body $bytes -ContentType "application/json; charset=utf-8"
