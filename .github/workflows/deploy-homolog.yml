@@ -69,21 +69,43 @@ jobs:
           echo "========================================================="
           git checkout HEAD~1
           docker compose up -d --build
-
-      # 10. NOTIFICAÇÃO TELEGRAM: Avisa no celular se o deploy deu certo ou se precisou de Rollback
+          
+      # 10. NOTIFICAÇÃO TELEGRAM: Versão nativa para Windows (Sem dependência de Docker/Linux)
       - name: Enviar notificação para o Telegram
-        uses: appleboy/telegram-action@master
-        if: always() # <--- Executa SEMPRE (tanto no sucesso quanto na falha do pipeline)
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          format: markdown
-          message: |
-            🚀 *Status do Pipeline de Homologação*
-            
-            • *Repositório:* ${{ github.repository }}
-            • *Commit:* `${{ github.event.head_commit.message }}`
-            • *Autor:* ${{ github.actor }}
-            • *Resultado Final:* ${{ job.status == 'success' && '✅ SUCESSO (Online)' || '❌ FALHOU (Rollback Executado)' }}
-            
-            📢 Baixe as evidências e veja o relatório na aba Actions do GitHub!
+        if: always() 
+        shell: powershell
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          JOB_STATUS: ${{ job.status }}
+          REPO: ${{ github.repository }}
+          AUTHOR: ${{ github.actor }}
+        run: |
+          # Define o emoji com base no sucesso ou falha
+          $statusStr = if ($env:JOB_STATUS -eq "success") { "✅ SUCESSO (Online)" } else { "❌ FALHOU (Rollback Executado)" }
+          
+          # Monta o texto da mensagem (Mantendo o Markdown)
+          $msg = @"
+          🚀 *Status do Pipeline de Homologação*
+          
+          • *Repositório:* $env:REPO
+          • *Commit:* `$env:COMMIT_MSG`
+          • *Autor:* $env:AUTHOR
+          • *Resultado Final:* $statusStr
+          
+          📢 Baixe as evidências e veja o relatório na aba Actions do GitHub!
+          "@
+
+          # Cria o corpo da requisição em formato JSON
+          $payload = @{
+              chat_id = $env:TELEGRAM_CHAT_ID
+              text = $msg
+              parse_mode = "Markdown"
+          } | ConvertTo-Json -Compress
+
+          # Força o envio em UTF-8 para não quebrar os acentos e emojis no Windows
+          $bytes = [System.Text.Encoding]::UTF8.GetBytes($payload)
+          
+          # Dispara o envio direto para os servidores do Telegram
+          Invoke-RestMethod -Uri "https://api.telegram.org/bot$env:TELEGRAM_TOKEN/sendMessage" -Method Post -Body $bytes -ContentType "application/json; charset=utf-8"
