@@ -46,6 +46,21 @@ Antes de começar, certifique-se de ter instalado no seu Windows 11:
 * `git commit -m "sua mensagem"`: Salva as alterações localmente com uma descrição.
 * `git push origin <nome-da-branch>`: Envia suas alterações locais para o GitHub.
 
+Para forçar a atualização de uma branch com o conteúdo de outra, por exemplo atualizar a branch "main" com o conteúdo de "homolog" sem se preocupar com merges:
+# 1. Mude para a branch main
+git checkout main
+
+# 2. Garanta que seu repositório local está atualizado com o servidor
+git fetch origin
+
+# 3. Força a main local a ficar idêntica à homolog local
+git reset --hard homolog
+
+# 4. Atualiza o servidor remoto marretando a main de lá com a sua local
+git push origin main --force
+
+**Obs: é também possível usar o rebase, mas ele pode falhar e pedir o uso do merge**
+
 ### 📌 Docker Cheat Sheet (Comandos Essenciais)
 
 * `docker compose up -d --build`: Cria, compila e inicia os containers em segundo plano.
@@ -173,4 +188,48 @@ Quando você se sentir confortável com o ambiente local e decidir enviar o seu 
 
 ---
 
+## 🚑 Rollback (Procedimento de Emergência)
+
+Caso ocorra um problema crítico no ambiente de produção (branch `main`) após um deploy, o processo de rollback deve ser iniciado imediatamente para restaurar a última versão estável. 
+
+Escolha um dos métodos abaixo dependendo da gravidade e da necessidade de preservar o histórico:
+
+### Método 1: Reverter o último commit/merge (Recomendado e Seguro)
+Este método cria um novo commit que "desfaz" as alterações do commit defeituoso. É a opção mais segura pois não reescreve o histórico do repositório.
+
+```bash
+# 1. Garanta que você está na branch main e atualizado
+git checkout main
+git pull origin main
+
+# 2. Visualize o histórico para encontrar o hash do commit problemático
+git log --oneline
+
+# 3. Desfaça as alterações do commit com erro (substitua pelo hash correto)
+git revert <hash-do-commit-com-erro>
+
+# 4. Salve e envie a reversão para o repositório remoto
+git push origin main
+```
+
+### Método 2: Hard Reset para a última versão estável (Destrutivo)
+⚠️ Atenção: Este método apaga o histórico recente e força o repositório a voltar no tempo. Use apenas se o ambiente estiver quebrado de forma severa e o revert não funcionar. Requer permissão para force push na main.
+
+# 1. Garanta que você está na branch main
+git checkout main
+git fetch origin
+
+# 2. Identifique o hash do último commit ESTÁVEL (que estava funcionando)
+git log --oneline
+
+# 3. Force a sua branch local a voltar para esse commit estável
+git reset --hard <hash-do-commit-estavel>
+
+# 4. Force a atualização no servidor (marretada)
+git push origin main --force
+
+### Pós-Rollback:
+Independente do método utilizado, após a restauração do ambiente, avise a equipe no canal de comunicação oficial e crie uma branch separada para investigar o bug que causou a falha no deploy.
+
+---
 *Este repositório foi criado para fins estritamente educacionais e serve como fundação sólida para arquiteturas de DevOps modernas.*
